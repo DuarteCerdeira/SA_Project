@@ -75,7 +75,7 @@ class Map():
 
     def calculate_map(self, z, angles, x, y, theta):
         """
-        Computes the occupancy-grid map for a given sensor/robot data
+        Compute the occupancy-grid map for a given sensor/robot data
         """
 
         # laser measurements in 2-D plane
@@ -105,30 +105,26 @@ class Map():
 
 if __name__ == '__main__':
     # Test micro-simulator
+    # Desired limits and resolution of the map
     xlim = [-10, 10]
     ylim = [-10, 10]
     resolution = 0.1
-    z = [2, 4, 3, 5]
-    angles = [np.pi/12, np.pi/6, 3*np.pi/12, 4*np.pi/12]
-    x = 2.5
-    y = 2.5
+    # Laser data
+    z = [3, 4, 5, 2, 4, 3, 5, 6]
+    angles = [-np.pi/6, -np.pi/12, 0, np.pi/12,
+              np.pi/6, 3*np.pi/12, 4*np.pi/12, np.pi/2]
+    # Robot Pose Data
+    x = 0
+    y = 0
     theta = 0
-    # create 2-D occupancy grid map
-    Map = Map(xlim, ylim, resolution, P_prior)
 
-    ''' 1. probably cycle the calculate_map function when we have more sensor/robot data
-        2. maybe get the robot's volume and occupy the neighbor cells as free
-        3. represent with different colors: robot, laser, obstacles and free
-        4. need to get data from rosbags
-        5. need better representation of maps - legend of values probabilities 0 to 1
-    '''
+    # initialize 2-D occupancy grid map
+    Map = Map(xlim, ylim, resolution, P_prior)
 
     # final occupancy grid map
     occupancy_map = Map.calculate_map(z, angles, x, y, theta)
 
     # plot results in plots.py
+    plots.plot_map(occupancy_map, resolution, xlim, ylim)
 
-    #plt.imshow(restore_p(occupancy_map), 'Blues')
-    # plt.show()
-    plt.imshow(occupancy_map, 'Blues')
-    plt.show()
+    plots.read_map_files('map.pgm')
