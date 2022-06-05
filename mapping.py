@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
 from ros_sub import Subscriber
+import plots
+
 # Probabilities chosen by the user to define the occupancy values
 P_occupied = 0.6
 P_free = 0.3
@@ -72,6 +74,9 @@ class Map():
         return (x, y)
 
     def calculate_map(self, z, angles, x, y, theta):
+        """
+        Compute the occupancy-grid map for a given sensor/robot data
+        """
 
         # laser measurements in 2-D plane
         x_distances, y_distances = self.laser_scan_to_2D(
@@ -87,37 +92,39 @@ class Map():
 
             # all cells between the robot position to the laser hit cell are
             # free
+            r = np.sqrt((x-d_x)**2+(y-d_y)**2)
             for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
                 self.log_map[x_bresenham, y_bresenham] += self.l_free
 
             # obstacle cells hit from laser are occupied
-            print(dist)
-            if dist < self.z_max:
+            if dist < self.z_max and abs(r-dist) < self.alpha/2:
                 self.log_map[x2, y2] += self.l_occupied
-                print(x2)
-                print(y2)
-                print(self.log_map[x2, y2])
 
         return self.log_map
 
 
 if __name__ == '__main__':
-
-    # Testing micro-simulator
+    # Test micro-simulator
+    # Desired limits and resolution of the map
     xlim = [-10, 10]
     ylim = [-10, 10]
     resolution = 0.1
-    z = [2, 4, 3, 5]
-    angles = [np.pi/12, np.pi/6, 3*np.pi/12, 4*np.pi/12]
-    x = 2.5
-    y = 2.5
+    # Laser data
+    z = [3, 4, 5, 2, 4, 3, 5, 6]
+    angles = [-np.pi/6, -np.pi/12, 0, np.pi/12,
+              np.pi/6, 3*np.pi/12, 4*np.pi/12, np.pi/2]
+    # Robot Pose Data
+    x = 0
+    y = 0
     theta = 0
 
-    # create 2-D occupancy grid map
+    # initialize 2-D occupancy grid map
     Map = Map(xlim, ylim, resolution, P_prior)
 
-    # Final occupancy grid map
+    # final occupancy grid map
     occupancy_map = Map.calculate_map(z, angles, x, y, theta)
 
-    plt.imshow(occupancy_map, 'Blues')
-    plt.show()
+    # plot results in plots.py
+    plots.plot_map(occupancy_map, resolution, xlim, ylim)
+
+    plots.read_map_files('map.pgm')

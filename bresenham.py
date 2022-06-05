@@ -2,6 +2,7 @@
 import numpy as np
 
 # This script is taken from https://github.com/lukovicaleksa/grid-mapping-in-ROS/blob/main/scripts/bresenham.py
+#                           https://github.com/encukou/bresenham
 
 
 def bresenham(Map, x1, y1, x2, y2):
