@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
-from ros_sub import Subscriber
 import plots
 
 # Probabilities chosen by the user to define the occupancy values
@@ -74,10 +73,7 @@ class Map():
         return (x, y)
 
     def calculate_map(self, z, angles, x, y, theta):
-        """
-        Compute the occupancy-grid map for a given sensor/robot data
-        """
-
+        """Compute the occupancy-grid map for a given sensor/robot data."""
         # laser measurements in 2-D plane
         x_distances, y_distances = self.laser_scan_to_2D(
             z, angles, x, y, theta)
