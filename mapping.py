@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
+from ros_sub import Subscriber
 # Probabilities chosen by the user to define the occupancy values
 P_occupied = 0.6
 P_free = 0.3
@@ -10,12 +11,12 @@ P_prior = 0.5
 
 
 def log_odds(p):
-    '''Calculates the log-odd probability'''
+    """Calculate the log-odd probability."""
     return np.log(p/(1-p))
 
 
 def restore_p(l):
-    '''Restores the probability from log-odds '''
+    """Restore the probability from log-odds."""
     return 1-1 / (1+np.exp(l))
 
 
@@ -47,12 +48,13 @@ class Map():
         self.l_free = log_odds(P_free)
 
     def laser_scan_to_2D(self, z, angles, x, y, theta):
-        '''
-        Convert laser measurements to X-Y plane for mapping purposes
+        """
+        Convert laser measurements to X-Y plane for mapping purposes.
+
         @param distances: distance measurements from the laser
         @param angles: angle measurements from the laser
         @param x, y, theta: robot position
-        '''
+        """
         x_distances = np.array([])
         y_distances = np.array([])
 
@@ -63,8 +65,7 @@ class Map():
         return (x_distances, y_distances)
 
     def map_coordinates(self, x_continuous, y_continuous):
-        '''Convert (x,y) continuous coordinates to discrete coordinates
-        '''
+        """Convert (x,y) continuous coordinates to discrete coordinates."""
         x = int((x_continuous - self.xlim[0]) / self.resolution)
         y = int((y_continuous - self.ylim[0]) / self.resolution)
 
@@ -84,7 +85,8 @@ class Map():
             # ending (x, y) for Bresenham's algorithm
             x2, y2 = self.map_coordinates(d_x, d_y)
 
-            # all cells between the robot position to the laser hit cell are free
+            # all cells between the robot position to the laser hit cell are
+            # free
             for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
                 self.log_map[x_bresenham, y_bresenham] += self.l_free
 
@@ -100,6 +102,7 @@ class Map():
 
 
 if __name__ == '__main__':
+
     # Testing micro-simulator
     xlim = [-10, 10]
     ylim = [-10, 10]
@@ -109,13 +112,12 @@ if __name__ == '__main__':
     x = 2.5
     y = 2.5
     theta = 0
+
     # create 2-D occupancy grid map
     Map = Map(xlim, ylim, resolution, P_prior)
 
     # Final occupancy grid map
     occupancy_map = Map.calculate_map(z, angles, x, y, theta)
 
-    #plt.imshow(restore_p(occupancy_map), 'Blues')
-    # plt.show()
     plt.imshow(occupancy_map, 'Blues')
     plt.show()
