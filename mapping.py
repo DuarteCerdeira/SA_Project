@@ -96,6 +96,7 @@ class Map():
             if dist < self.z_max and abs(r-dist) < self.alpha/2:
                 self.log_map[x2, y2] += self.l_occupied
 
+    def return_map(self):
         return self.log_map
 
 
