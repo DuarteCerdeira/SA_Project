@@ -10,9 +10,5 @@ scan = b.message_by_topic('/scan')
 scandf = pd.read_csv(scan)
 
 print(scandf["angle_min"])
-
-str1 = ["ranges_" + str(i) for i in range(725)]
-
-laser_data = [scandf[str1]]
-
-print(laser_data)
+print(scandf["angle_max"])
+print(scandf["angle_increment"])
