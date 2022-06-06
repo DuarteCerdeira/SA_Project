@@ -12,12 +12,12 @@ P_prior = 0.5
 
 
 def log_odds(p):
-    """Calculate the log-odd probability."""
+    '''Calculate the log-odd probability'''
     return np.log(p/(1-p))
 
 
 def restore_p(l):
-    """Restore the probability from log-odds."""
+    '''Restore the probability from log-odds '''
     return 1-1 / (1+np.exp(l))
 
 
@@ -38,7 +38,7 @@ class Map():
         self.ysize = len(y)  # number of cells in y direction
         self.map_size = self.xsize*self.ysize  # area of the map
 
-        self.alpha = 0.5  # thickness of the obstacle
+        self.alpha = 0.1  # thickness of the obstacle
         self.z_max = 10.0  # max reading distance from the laser scan
 
         # initial log-odd probability map matrix
@@ -49,31 +49,37 @@ class Map():
         self.l_free = log_odds(P_free)
 
     def laser_scan_to_2D(self, z, angles, x, y, theta):
-        """
-        Convert laser measurements to X-Y plane for mapping purposes.
-
+        '''
+        Convert laser measurements to X-Y plane for mapping purposes
         @param distances: distance measurements from the laser
         @param angles: angle measurements from the laser
         @param x, y, theta: robot position
-        """
+        '''
         x_distances = np.array([])
         y_distances = np.array([])
 
         for (d, angle) in zip(z, angles):
-            x_distances = np.append(x_distances, x+d*np.cos(angle+theta))
-            y_distances = np.append(y_distances, y+d*np.sin(angle+theta))
+            x_distances = np.append(
+                x_distances, x+(d+self.alpha)*np.cos(angle+theta))
+            y_distances = np.append(
+                y_distances, y+(d+self.alpha)*np.sin(angle+theta))
 
         return (x_distances, y_distances)
 
     def map_coordinates(self, x_continuous, y_continuous):
-        """Convert (x,y) continuous coordinates to discrete coordinates."""
+        '''
+        Convert (x,y) continuous coordinates to discrete coordinates
+        '''
         x = int((x_continuous - self.xlim[0]) / self.resolution)
         y = int((y_continuous - self.ylim[0]) / self.resolution)
 
         return (x, y)
 
     def calculate_map(self, z, angles, x, y, theta):
-        """Compute the occupancy-grid map for a given sensor/robot data."""
+        """
+        Compute the occupancy-grid map for a given sensor/robot data
+        """
+
         # laser measurements in 2-D plane
         x_distances, y_distances = self.laser_scan_to_2D(
             z, angles, x, y, theta)
@@ -86,17 +92,18 @@ class Map():
             # ending (x, y) for Bresenham's algorithm
             x2, y2 = self.map_coordinates(d_x, d_y)
 
-            # all cells between the robot position to the laser hit cell are
-            # free
-            r = np.sqrt((x-d_x)**2+(y-d_y)**2)
+            # all cells between the robot position to the laser hit cell are free
             for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
                 self.log_map[x_bresenham, y_bresenham] += self.l_free
 
             # obstacle cells hit from laser are occupied
-            if dist < self.z_max and abs(r-dist) < self.alpha/2:
+            if dist < self.z_max:
                 self.log_map[x2, y2] += self.l_occupied
 
+        return self.log_map
+
     def return_map(self):
+
         return self.log_map
 
 
@@ -105,11 +112,11 @@ if __name__ == '__main__':
     # Desired limits and resolution of the map
     xlim = [-10, 10]
     ylim = [-10, 10]
-    resolution = 0.1
+    resolution = 0.05
     # Laser data
-    z = [3, 4, 5, 2, 4, 3, 5, 6]
+    z = [3, 4, 5, 2, 4, 3, 5, 6, 10, 9.95]
     angles = [-np.pi/6, -np.pi/12, 0, np.pi/12,
-              np.pi/6, 3*np.pi/12, 4*np.pi/12, np.pi/2]
+              np.pi/6, 3*np.pi/12, 4*np.pi/12, np.pi/2, np.pi, np.pi*(13/12)]
     # Robot Pose Data
     x = 0
     y = 0
