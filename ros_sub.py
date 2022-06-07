@@ -39,9 +39,10 @@ def listener():
     scan_sub = message_filters.Subscriber('scan', LaserScan)
     pose_sub = message_filters.Subscriber('pose', Odometry)
 
-    ts = message_filters.ApproximateTimeSynchronizer([scan_sub, pose_sub], 1, 10)
-    ts.registerCallback(callback)
+    rate = rospy.Rate(10)  # 10 Hz
 
+    callback()
+    rate.sleep()
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
@@ -58,5 +59,6 @@ if __name__ == '__main__':
     # rospy.spin()
 
     listener()
+
     occupancy_map = map.return_map()
     plots.plot_map(occupancy_map, 0.1, [-10, 10], [-10, 10])

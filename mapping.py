@@ -75,11 +75,11 @@ class Map():
 
         return (x, y)
 
-    def calculate_map(self, z, angles, x, y, theta):
+    def calculate_map(self, z, angles, x, y, theta, z_max):
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
-
+        self.z_max = z_max
         # laser measurements in 2-D plane
         x_distances, y_distances = self.laser_scan_to_2D(
             z, angles, x, y, theta)
