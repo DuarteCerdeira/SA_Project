@@ -1,14 +1,20 @@
 from bagpy import bagreader
 import pandas as pd
+import matplotlib.pyplot as plt
 
-b = bagreader('2022-05-24-06-55-16.bag')
+b = bagreader('2022-05-19-18-59-52.bag')
 
 print(b.topic_table)
 
-scan = b.message_by_topic('/scan')
+pose = b.message_by_topic('/pose')
 
-scandf = pd.read_csv(scan)
+posedf = pd.read_csv(pose)
 
-print(scandf["angle_min"])
-print(scandf["angle_max"])
-print(scandf["angle_increment"])
+print(posedf)
+
+x = posedf["pose.pose.position.x"]
+y = posedf["pose.pose.position.y"]
+
+posedf.plot(x='pose.pose.position.x', y='pose.pose.position.y')
+
+plt.show()
