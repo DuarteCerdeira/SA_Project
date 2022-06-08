@@ -1,13 +1,14 @@
 #! /usr/bin/env python3
 import matplotlib.pyplot as plt
 import cv2 as cv2
-import mapping
+from mapping import restore_p
+
 
 def plot_map(occupancy_map, resolution, xlim, ylim):
     '''Plot a simple figure to represent the occupancy map '''
 
     plt.figure(0)
-    plt.imshow(mapping.restore_p(occupancy_map), 'Blues')
+    plt.imshow(restore_p(occupancy_map), 'Blues')
 
     # To represent the x-y limits of the map
     plt.xlim([0, len(occupancy_map)-1])

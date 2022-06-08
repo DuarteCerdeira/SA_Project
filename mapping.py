@@ -39,7 +39,7 @@ class Map():
         self.map_size = self.xsize*self.ysize  # area of the map
 
         self.alpha = 0.1  # thickness of the obstacle
-        self.z_max = 10.0  # max reading distance from the laser scan
+        self.z_max = None   # max reading distance from the laser scan
 
         # initial log-odd probability map matrix
         self.log_map = np.full((self.xsize, self.ysize), log_odds(p))
@@ -47,24 +47,6 @@ class Map():
         # log probabilities to update the map
         self.l_occupied = log_odds(P_occupied)
         self.l_free = log_odds(P_free)
-
-    def laser_scan_to_2D(self, z, angles, x, y, theta):
-        '''
-        Convert laser measurements to X-Y plane for mapping purposes
-        @param distances: distance measurements from the laser
-        @param angles: angle measurements from the laser
-        @param x, y, theta: robot position
-        '''
-        x_distances = np.array([])
-        y_distances = np.array([])
-
-        for (d, angle) in zip(z, angles):
-            x_distances = np.append(
-                x_distances, x+(d+self.alpha)*np.cos(angle+theta))
-            y_distances = np.append(
-                y_distances, y+(d+self.alpha)*np.sin(angle+theta))
-
-        return (x_distances, y_distances)
 
     def map_coordinates(self, x_continuous, y_continuous):
         '''
@@ -75,34 +57,49 @@ class Map():
 
         return (x, y)
 
-    def calculate_map(self, z, angles, x, y, theta, z_max):
+    def calculate_map(self, z, angles, x, y, yaw, z_max):
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
         self.z_max = z_max
-        # laser measurements in 2-D plane
-        x_distances, y_distances = self.laser_scan_to_2D(
-            z, angles, x, y, theta)
 
-        # initial (x, y) for Bresenham's algorithm
+        # initial (x, y) for Bresenham's algorithm (robot position)
         x1, y1 = self.map_coordinates(x, y)
 
-        for (d_x, d_y, dist) in zip(x_distances, y_distances, z):
+        # run algorithm for all range and angle measurements
+        for angle, dist in zip(angles, z):
 
-            # ending (x, y) for Bresenham's algorithm
-            x2, y2 = self.map_coordinates(d_x, d_y)
+            # ignore range values that are NaN and only update map when range is lower than maximum range
+            if (not np.isnan(dist)) and dist < self.z_max:
 
-            # all cells between the robot position to the laser hit cell are free
-            for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
-                self.log_map[x_bresenham, y_bresenham] += self.l_free
+                # angle of the laser + orientation of the robot
+                theta = angle+yaw
+                if theta > np.pi:
+                    theta -= 2*np.pi
+                elif theta < -np.pi:
+                    theta += 2*np.pi
 
-            # obstacle cells hit from laser are occupied
-            if dist < self.z_max:
-                self.log_map[x2, y2] += self.l_occupied
+                # obstacle position
+                x2 = x + dist * np.cos(theta)
+                y2 = y + dist * np.sin(theta)
 
-        return self.log_map
+                # obstacle position with assumed object thickness alpha
+                x3 = x + (dist + self.alpha) * np.cos(theta)
+                y3 = y + (dist + self.alpha) * np.sin(theta)
 
-    def return_map(self):
+                # discretize coordinates for Bresenham's algorithm (obstacle position)
+                x2, y2 = self.map_coordinates(x2, y2)
+
+                # discretize coordinates for Bresenham's algorithm (obstacle position with thickness alpha)
+                x3, y3 = self.map_coordinates(x3, y3)
+
+                # all cells between the robot position to the laser hit cell are free
+                for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
+                    self.log_map[y_bresenham, x_bresenham] += self.l_free
+
+                # obstacle cells hit from laser are occupied
+                for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
+                    self.log_map[y_bresemham, x_bresemham] += self.l_occupied
 
         return self.log_map
 
@@ -110,23 +107,26 @@ class Map():
 if __name__ == '__main__':
     # Test micro-simulator
     # Desired limits and resolution of the map
-    xlim = [-10, 10]
-    ylim = [-10, 10]
-    resolution = 0.05
+    xlim = [-20, 20]
+    ylim = [-20, 20]
+    resolution = 0.1
+    z_max = 10
     # Laser data
-    z = [3, 4, 5, 2, 4, 3, 5, 6, 10, 9.95]
-    angles = [-np.pi/6, -np.pi/12, 0, np.pi/12,
-              np.pi/6, 3*np.pi/12, 4*np.pi/12, np.pi/2, np.pi, np.pi*(13/12)]
+    z = [5]
+    angles = [0]
     # Robot Pose Data
     x = 0
     y = 0
-    theta = 0
+    yaw = 0
 
     # initialize 2-D occupancy grid map
     Map = Map(xlim, ylim, resolution, P_prior)
 
     # final occupancy grid map
-    occupancy_map = Map.calculate_map(z, angles, x, y, theta)
+    for i in range(5):
+        x = i
+        y = 0
+        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max)
 
     # plot results in plots.py
     plots.plot_map(occupancy_map, resolution, xlim, ylim)
