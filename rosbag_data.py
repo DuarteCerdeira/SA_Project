@@ -67,7 +67,7 @@ class Rosbag_handler():
 
         _, __, yaw = utils.euler_from_quaternion(self.orientation)
         # returns data for mapping algorithm
-        return self.ranges, self.angles, self.position_x-self.initial_x, self.position_y-self.initial_y, yaw, self.range_max
+        return self.ranges, self.angles, self.position_x-self.initial_x, self.position_y-self.initial_y, yaw, self.range_max, self.range_min
 
     def check_timestamps(self):
 
@@ -101,12 +101,13 @@ if __name__ == '__main__':
             handler.scanCallback(msg)
             Pose = True
         i += 1
+
         if (not(Scan) or not(Pose)):
             continue
         # if (handler.check_timestamps()):
-        z, angles, x, y, yaw, z_max = handler.run_algorithm(i)
+        z, angles, x, y, yaw, z_max, z_min = handler.run_algorithm(i)
         handler.convert_z(z)
-        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max)
+        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
         Pose = False
         Scan = False
     # plot results in plots.py

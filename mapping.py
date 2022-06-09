@@ -57,11 +57,12 @@ class Map():
 
         return (x, y)
 
-    def calculate_map(self, z, angles, x, y, yaw, z_max):
+    def calculate_map(self, z, angles, x, y, yaw, z_max, z_min):
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
         self.z_max = z_max
+        self.z_min = z_min
 
         # initial (x, y) for Bresenham's algorithm (robot position)
         x1, y1 = self.map_coordinates(x, y)
@@ -69,8 +70,8 @@ class Map():
         # run algorithm for all range and angle measurements
         for angle, dist in zip(angles, z):
 
-            # ignore range values that are NaN and only update map when range is lower than maximum range
-            if (not np.isnan(dist)) and dist < self.z_max:
+            # ignore range values that are NaN and only update map when range is inside the range limits
+            if (not np.isnan(dist)) and dist < self.z_max and dist > self.z_min:
 
                 # angle of the laser + orientation of the robot
                 theta = angle+yaw
@@ -111,6 +112,7 @@ if __name__ == '__main__':
     ylim = [-20, 20]
     resolution = 0.1
     z_max = 10
+    z_min = 0.1
     # Laser data
     z = [5]
     angles = [0]
@@ -126,7 +128,7 @@ if __name__ == '__main__':
     for i in range(5):
         x = i
         y = 0
-        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max)
+        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
 
     # plot results in plots.py
     plots.plot_map(occupancy_map, resolution, xlim, ylim)

@@ -41,6 +41,7 @@ class Map():
 
         self.alpha = 0.1  # thickness of the obstacle
         self.z_max = None   # max reading distance from the laser scan
+        self.z_min = None  # min reading distance from the laser scan
 
         # initial log-odd probability map matrix
         self.log_map = np.full((self.xsize, self.ysize), log_odds(p))
@@ -58,11 +59,12 @@ class Map():
 
         return (x, y)
 
-    def calculate_map(self, z, angles, x, y, yaw, z_max):
+    def calculate_map(self, z, angles, x, y, yaw, z_max, z_min):
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
         self.z_max = z_max
+        self.z_min = z_min
 
         # initial (x, y) for Bresenham's algorithm (robot position)
         x1, y1 = self.map_coordinates(x, y)
@@ -70,8 +72,8 @@ class Map():
         # run algorithm for all range and angle measurements
         for angle, dist in zip(angles, z):
 
-            # ignore range values that are NaN and only update map when range is lower than maximum range
-            if (not np.isnan(dist)) and dist < self.z_max:
+            # ignore range values that are NaN and only update map when range is inside range limits
+            if (not np.isnan(dist)) and dist < self.z_max and dist > self.z_min:
 
                 # angle of the laser + orientation of the robot
                 theta = angle+yaw

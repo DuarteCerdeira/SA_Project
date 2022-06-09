@@ -10,9 +10,6 @@ import plots
 import math
 
 
-
-PI = 3.1415
-
 class MySubscriber(object):
     """Class for subscribing to topics."""
 
@@ -22,18 +19,23 @@ class MySubscriber(object):
         """Initialize new MySubscriber object."""
         self.x = 0
         self.y = 0
-        self.theta = 0
+        self.orientation = [0, 0, 0, 0]
+        self.yaw = 0
+        self.flag = 0
+        self.initial_x = 0
+        self.initial_y = 0
 
         self.ranges = []
         self.angles = []
         self.z_max = 0
+        self.z_min = 0
 
         self.occupancy_map = self.map.calculate_map(self.ranges,
                                                     self.angles,
                                                     self.x,
                                                     self.y,
-                                                    self.theta,
-                                                    self.z_max)
+                                                    self.yaw,
+                                                    self.z_max, self.z_min)
 
         rospy.Subscriber('scan', LaserScan, self.callback_scan)
         rospy.Subscriber('pose', Odometry, self.callback_pose)
@@ -45,35 +47,37 @@ class MySubscriber(object):
               'theta = ' + str(self.theta))
         self.x = pose_msg.pose.pose.position.x
         self.y = pose_msg.pose.pose.position.y
-        xq = pose_msg.pose.pose.orientation.x
-        yq = pose_msg.pose.pose.orientation.y
-        zq = pose_msg.pose.pose.orientation.z
-        wq = pose_msg.pose.pose.orientation.w
-        # yaw_z = tf.transformations.euler_from_quaternion(msg_pose.pose.orientation, axes='z')
-        t3 = +2.0 * (wq * zq + xq * yq)
-        t4 = +1.0 - 2.0 * (yq * yq + zq * zq)
-        yaw_z = math.atan2(t3, t4) + PI/2
-        self.theta = yaw_z
-        # self.theta = 2 * math.atan2(pose_msg.pose.pose.orientation.z,
-        #                            pose_msg.pose.pose.orientation.w)
+        self.orientation = pose_msg.pose.pose.orientation
+
+        # normalize (x, y) coordinates of robot
+        self.flag += 1
+        if (self.flag == 1):
+            self.initial_x = self.x
+            self.initial.y = self.y
+        self.x = self.x - self.initial_y
+        self.y = self.y - self.initial_y
+
+        self.yaw = 2 * math.atan2(self.orientation[2],
+                                  self.orientation[3])
 
     def callback_scan(self, scan_msg):
         """Log listened data."""
-        self.ranges = scan_msg.ranges[1:None]
+        self.ranges = scan_msg.ranges[0:]
         self.ranges = np.where(np.isnan(self.ranges), 0, self.ranges)
 
         self.angles = np.linspace(scan_msg.angle_min,
                                   scan_msg.angle_max,
                                   len(self.ranges))
-
         self.z_max = scan_msg.range_max
+        self.z_min = scan_msg.range_min
 
         self.occupancy_map = self.map.calculate_map(self.ranges,
                                                     self.angles,
                                                     self.x,
                                                     self.y,
-                                                    self.theta,
-                                                    self.z_max)
+                                                    self.yaw,
+                                                    self.z_max,
+                                                    self.z_min)
 
     def loop(self):
         """Start main loop."""

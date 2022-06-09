@@ -1,14 +1,16 @@
 #! /usr/bin/env python3
 import matplotlib.pyplot as plt
 import cv2 as cv2
-from mapping import restore_p
+from bagpy import bagreader
+import pandas as pd
+import mapping
 
 
 def plot_map(occupancy_map, resolution, xlim, ylim):
     '''Plot a simple figure to represent the occupancy map '''
 
     plt.figure(0)
-    plt.imshow(restore_p(occupancy_map), 'Blues')
+    plt.imshow(mapping.restore_p(occupancy_map), 'Blues')
 
     # To represent the x-y limits of the map
     plt.xlim([0, len(occupancy_map)-1])
@@ -27,13 +29,16 @@ def plot_map(occupancy_map, resolution, xlim, ylim):
     plt.show()
 
 
-def read_map_files(file):
-    image = cv2.imread(file, -1)
-    plt.figure(1)
-    plt.imshow(image, 'gray')
-    plt.xlim([1700, 2100])
-    plt.ylim([1900, 2400])
-    plt.title('Gmapping reference occupancy map',
+if __name__ == '__main__':
+
+    # run to get robot's trajectory (x, y)
+
+    b = bagreader('2022-05-31-15-10-35.bag')
+    pose = b.message_by_topic('/pose')
+    posedf = pd.read_csv(pose)
+
+    posedf.plot(x='pose.pose.position.x', y='pose.pose.position.y',
+                xlabel='x [m]', ylabel='y [m]')
+    plt.title('Position of the robot',
               fontsize=14, fontweight='bold')
-    plt.colorbar()
     plt.show()
