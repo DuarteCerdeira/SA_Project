@@ -47,22 +47,15 @@ class MySubscriber(object):
               'theta = ' + str(self.theta))
         self.x = pose_msg.pose.pose.position.x
         self.y = pose_msg.pose.pose.position.y
-        self.orientation = pose_msg.pose.pose.orientation
-
-        # normalize (x, y) coordinates of robot
-        self.flag += 1
-        if (self.flag == 1):
-            self.initial_x = self.x
-            self.initial.y = self.y
-        self.x = self.x - self.initial_y
-        self.y = self.y - self.initial_y
+        self.orientation = [pose_msg.pose.pose.orientation.x, pose_msg.pose.pose.orientation.y,
+                            pose_msg.pose.pose.orientation.z, pose_msg.pose.pose.orientation.w]
 
         self.yaw = 2 * math.atan2(self.orientation[2],
                                   self.orientation[3])
 
     def callback_scan(self, scan_msg):
         """Log listened data."""
-        self.ranges = scan_msg.ranges[0:]
+        self.ranges = scan_msg.ranges
         self.ranges = np.where(np.isnan(self.ranges), 0, self.ranges)
 
         self.angles = np.linspace(scan_msg.angle_min,
@@ -79,14 +72,10 @@ class MySubscriber(object):
                                                     self.z_max,
                                                     self.z_min)
 
-    def loop(self):
-        """Start main loop."""
-        rospy.spin()
-
 
 if __name__ == '__main__':
     rospy.init_node('subscriber_node', anonymous=True)
     my_sub = MySubscriber()
-    my_sub.loop()
+    rospy.spin()
     my_sub.occupancy_map = my_sub.map.return_map()
     plots.plot_map(my_sub.occupancy_map, 0.1, [-20, 20], [-20, 20])
