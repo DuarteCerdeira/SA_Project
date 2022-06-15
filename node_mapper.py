@@ -93,7 +93,7 @@ class Map():
 
         return self.log_map
 
-    def return_map():
+    def return_map(self):
         return self.log_map
 
 

@@ -3,6 +3,7 @@
 
 import rospy
 from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import mapping
 import numpy as np
@@ -38,13 +39,16 @@ class MySubscriber(object):
                                                     self.z_max, self.z_min)
 
         rospy.Subscriber('scan', LaserScan, self.callback_scan)
-        rospy.Subscriber('pose', Odometry, self.callback_pose)
+        rospy.Subscriber(
+            'amcl_pose', PoseWithCovarianceStamped, self.callback_pose)
+        #rospy.Subscriber('pose', Odometry, self.callback_pose)
+
 
     def callback_pose(self, pose_msg):
         """Log listened data."""
         print('x = ' + str(self.x) + ', ' +
               'y = ' + str(self.y) + ', ' +
-              'theta = ' + str(self.theta))
+              'yaw = ' + str(self.yaw))
         self.x = pose_msg.pose.pose.position.x
         self.y = pose_msg.pose.pose.position.y
         self.orientation = [pose_msg.pose.pose.orientation.x, pose_msg.pose.pose.orientation.y,
@@ -72,10 +76,18 @@ class MySubscriber(object):
                                                     self.z_max,
                                                     self.z_min)
 
+def main():
+    rospy.init_node('mapping_node', anonymous=True)
+    my_node = MySubscriber()
+
+    # ROS node rate to get messages
+    #rate = rospy.Rate(0.1)  # 10 Hz
+
+    while not rospy.is_shutdown():
+        my_node.occupancy_map = my_node.map.return_map()
+        #rate.sleep()
+    plots.plot_map(my_node.occupancy_map, 0.1, [-20, 20], [-20, 20])
+
 
 if __name__ == '__main__':
-    rospy.init_node('subscriber_node', anonymous=True)
-    my_sub = MySubscriber()
-    rospy.spin()
-    my_sub.occupancy_map = my_sub.map.return_map()
-    plots.plot_map(my_sub.occupancy_map, 0.1, [-20, 20], [-20, 20])
+    main()

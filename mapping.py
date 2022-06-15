@@ -103,6 +103,9 @@ class Map():
                     self.log_map[y_bresemham, x_bresemham] += self.l_occupied
 
         return self.log_map
+        
+    def return_map(self):
+        return self.log_map
 
 
 if __name__ == '__main__':
