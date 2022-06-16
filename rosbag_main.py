@@ -1,12 +1,30 @@
 #! /usr/bin/env python3
+
+##############################
+# Autonomous Systems 2021/2022 Mapping Project
+#
+# This is the main script that reads a specific rosbag and creates an 2-D occupancy map.
+#   Group 13:
+#       - 93079, Haohua Dong
+#       - 96158, André Ferreira
+#       - 96195, Duarte Cerdeira
+#       - 96230, Inês Pinto
+#
+##############################
+
+
 import numpy as np
+import math
+# to read bags
 import rosbag
-import utils
+# mapping algorithm for rosbags
 import rosbag_mapping
+# to plot figures
 import plots
 import time
+import utils
+# ROS python api library
 import rospy
-import math
 
 
 class Rosbag_handler():
@@ -54,8 +72,8 @@ class Rosbag_handler():
         self.angles = np.linspace(
             self.angle_min, self.angle_max, len(self.ranges))
 
-    def convert_z(self, z):
-        distances = self.ranges[0:]
+    def convert_z(self):
+        distances = self.ranges
         self.ranges = np.where(np.isnan(distances), 0, distances)
         return self.ranges
 
@@ -88,13 +106,13 @@ if __name__ == '__main__':
     # initialize 2-D occupancy grid map
     Map = rosbag_mapping.Map(xlim, ylim, resolution, P_prior)
     # read bag
-    bag = rosbag.Bag('2022-05-31-15-10-35.bag')
+    bag = rosbag.Bag('10-06-Bags/corredores.bag')
     handler = Rosbag_handler()
     i = 0
     Scan = False
     Pose = False
     for topic, msg, t in bag.read_messages():
-        if topic == '/pose':
+        if topic == '/amcl_pose':
             handler.poseCallback(msg)
             Scan = True
         elif topic == '/scan':
@@ -106,7 +124,7 @@ if __name__ == '__main__':
             continue
         # if (handler.check_timestamps()):
         z, angles, x, y, yaw, z_max, z_min = handler.run_algorithm(i)
-        handler.convert_z(z)
+        handler.convert_z()
         occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
         Pose = False
         Scan = False

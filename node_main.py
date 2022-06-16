@@ -1,4 +1,17 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
+
+##############################
+# Autonomous Systems 2021/2022 Mapping Project
+#
+# This is the main script that subscribes to laser scans and robot poses
+# from a rosbag and publishes a topic that contains an 2-D occupancy map.
+#   Group 13:
+#       - 93079, Haohua Dong
+#       - 96158, André Ferreira
+#       - 96195, Duarte Cerdeira
+#       - 96230, Inês Pinto
+#
+##############################
 import rospy
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
@@ -24,6 +37,12 @@ class mappingNode(object):
     mapper = node_mapper.Map(width, height, resolution, P_prior)
 
     def __init__(self):
+
+        rospy.init_node('mapping_node', anonymous=True)
+
+        # Flags for scan and pose messages
+        self.Scan = False
+        self.Pose = False
 
         # Robot pose parameters
         self.x = 0
@@ -61,11 +80,14 @@ class mappingNode(object):
         self.grid_map.info.origin.orientation.w = 0
         self.grid_map.data = []
 
-        # Publish topic /my_map with the calculated map
+        # Create topic /my_map with the calculated map
         self.map_publisher = rospy.Publisher(
-            '/my_map', OccupancyGrid, queue_size = 1)
-        # Publish topic /my_map_metadata
-        self.map_data_publisher = rospy.Publisher('/my_map_metadata', MapMetaData, queue_size = 1)
+            '/my_map', OccupancyGrid, queue_size=1)
+
+        # Create topic /my_map_metadata
+        self.map_data_publisher = rospy.Publisher(
+            '/my_map_metadata', MapMetaData, queue_size=1)
+
         # Publish initial map
         rospy.loginfo("Publishing initial map !")
         self.map_publisher.publish(self.grid_map)
@@ -79,7 +101,9 @@ class mappingNode(object):
                                                        self.yaw,
                                                        self.z_max,
                                                        self.z_min)
+        # save the updated map
         self.probability_map = []
+        # threshold to decide occupancy values
         self.threshold = 0.5
 
     def callback_pose(self, pose_msg):
@@ -94,6 +118,8 @@ class mappingNode(object):
                             pose_msg.pose.pose.orientation.z, pose_msg.pose.pose.orientation.w]
         self.yaw = 2 * math.atan2(self.orientation[2],
                                   self.orientation[3])
+        self.pose_time = pose_msg.header.stamp.secs
+        self.Pose = True
 
     def callback_scan(self, scan_msg):
         """Log listened laser data."""
@@ -106,7 +132,15 @@ class mappingNode(object):
                                   len(self.ranges))
         self.z_max = scan_msg.range_max
         self.z_min = scan_msg.range_min
+        self.scan_time = scan_msg.header.stamps.secs
+        self.Scan = True
 
+    def run_mapping(self):
+        """ Calculate and convert the map data to a list and its respective occupancy probabilities 
+        and publish the topic to ROS.
+        The map data is a list and the Occupancy probabilities are in the range [0, 100]. 
+        Unknown is -1."""
+        # OGM Algorithm
         self.occupancy_map = self.mapper.calculate_map(self.ranges,
                                                        self.angles,
                                                        self.x,
@@ -114,13 +148,6 @@ class mappingNode(object):
                                                        self.yaw,
                                                        self.z_max,
                                                        self.z_min)
-
-    def publish_map(self):
-        """ Convert the map data to a list and its respective occupancy probabilities 
-        and publish the topic to ROS.
-        The map data is a list and the Occupancy probabilities are in the range [0, 100]. 
-        Unknown is -1."""
-
         # restore probability from log-odds
         self.probability_map = 1 - (1 / (1 + np.exp(self.occupancy_map)))
 
@@ -143,18 +170,30 @@ class mappingNode(object):
         self.map_publisher.publish(self.grid_map)
         self.map_data_publisher.publish(self.grid_map.info)
 
+    def master(self):
+        # ROS node rate to get messages
+        # rate = rospy.Rate(0.1)
+        while not rospy.is_shutdown():
+            if (self.Scan and self.Pose):
+                self.run_mapping()
+                self.Pose = False
+                self.Scan = False
+                # rate.sleep()
+
+    def check_timestamps(self):
+
+        difference = abs(self.pose_time - self.scan_time)
+        print(difference)
+        if difference <= 1:
+            return True
+        else:
+            return False
+
 
 def main():
-    rospy.init_node('mapping_node', anonymous=True)
     my_node = mappingNode()
-
-    # ROS node rate to get messages
-    rate = rospy.Rate(0.1)  # 10 Hz
-
-    while not rospy.is_shutdown():
-        my_node.occupancy_map = my_node.mapper.return_map()
-        rate.sleep()
-        my_node.publish_map()
+    my_node.master()
+    print('finished mapping !')
 
 
 if __name__ == '__main__':
