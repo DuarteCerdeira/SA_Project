@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
-import plots
+import utils
 
 # Probabilities chosen by the user to define the occupancy values
 P_occupied = 0.6
@@ -35,6 +35,7 @@ class Map():
         # log probabilities to update the map
         self.l_occupied = log_odds(P_occupied)
         self.l_free = log_odds(P_free)
+        # gmapping starts at a certain coordinate
         self.offset = 20  # map offset to add to coordinates
 
     def map_coordinates(self, x_continuous, y_continuous):

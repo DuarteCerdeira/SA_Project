@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 import mapping
 import numpy as np
-import plots
+import utils
 import math
 
 
@@ -43,7 +43,6 @@ class MySubscriber(object):
             'amcl_pose', PoseWithCovarianceStamped, self.callback_pose)
         #rospy.Subscriber('pose', Odometry, self.callback_pose)
 
-
     def callback_pose(self, pose_msg):
         """Log listened data."""
         print('x = ' + str(self.x) + ', ' +
@@ -76,17 +75,18 @@ class MySubscriber(object):
                                                     self.z_max,
                                                     self.z_min)
 
+
 def main():
     rospy.init_node('mapping_node', anonymous=True)
     my_node = MySubscriber()
 
     # ROS node rate to get messages
-    #rate = rospy.Rate(0.1)  # 10 Hz
+    # rate = rospy.Rate(0.1)  # 10 Hz
 
     while not rospy.is_shutdown():
         my_node.occupancy_map = my_node.map.return_map()
-        #rate.sleep()
-    plots.plot_map(my_node.occupancy_map, 0.1, [-20, 20], [-20, 20])
+        # rate.sleep()
+    utils.plot_map(my_node.occupancy_map, 0.1, [-20, 20], [-20, 20])
 
 
 if __name__ == '__main__':

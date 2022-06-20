@@ -19,12 +19,17 @@ import math
 import rosbag
 # mapping algorithm for rosbags
 import rosbag_mapping
-# to plot figures
-import plots
-import time
+# for auxiliary functions
 import utils
 # ROS python api library
 import rospy
+import matplotlib.pyplot as plt
+
+# desired limits and resolution of the map
+P_prior = 0.5
+xlim = [-25, 25]
+ylim = [-25, 25]
+resolution = 0.05
 
 
 class Rosbag_handler():
@@ -69,13 +74,9 @@ class Rosbag_handler():
         self.range_min = msg_scan.range_min
         self.range_max = msg_scan.range_max
         self.ranges = msg_scan.ranges
+        self.ranges = np.where(np.isnan(self.ranges), 0, self.ranges)
         self.angles = np.linspace(
             self.angle_min, self.angle_max, len(self.ranges))
-
-    def convert_z(self):
-        distances = self.ranges
-        self.ranges = np.where(np.isnan(distances), 0, distances)
-        return self.ranges
 
     def run_algorithm(self, i):
         # save initial positions of robot as (0, 0)
@@ -83,7 +84,8 @@ class Rosbag_handler():
             self.initial_x = self.position_x
             self.initial_y = self.position_y
 
-        _, __, yaw = utils.euler_from_quaternion(self.orientation)
+        yaw = 2 * math.atan2(self.orientation[2],
+                             self.orientation[3])
         # returns data for mapping algorithm
         return self.ranges, self.angles, self.position_x-self.initial_x, self.position_y-self.initial_y, yaw, self.range_max, self.range_min
 
@@ -97,37 +99,67 @@ class Rosbag_handler():
             return False
 
 
-if __name__ == '__main__':
-    # desired limits and resolution of the map
-    P_prior = 0.5
-    xlim = [-20, 20]
-    ylim = [-20, 20]
-    resolution = 0.1
+def read_bag(pose, bagname):
     # initialize 2-D occupancy grid map
     Map = rosbag_mapping.Map(xlim, ylim, resolution, P_prior)
     # read bag
-    bag = rosbag.Bag('10-06-Bags/corredores.bag')
+    bag = rosbag.Bag(bagname)
     handler = Rosbag_handler()
     i = 0
     Scan = False
     Pose = False
     for topic, msg, t in bag.read_messages():
-        if topic == '/amcl_pose':
+        if topic == pose:
             handler.poseCallback(msg)
-            Scan = True
+            Pose = True
         elif topic == '/scan':
             handler.scanCallback(msg)
-            Pose = True
+            Scan = True
         i += 1
-
+        # only run algorithm when we get both pose and scan messages
         if (not(Scan) or not(Pose)):
             continue
         # if (handler.check_timestamps()):
         z, angles, x, y, yaw, z_max, z_min = handler.run_algorithm(i)
-        handler.convert_z()
-        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
+        occupancy_map = Map.calculate_map(
+            z, angles, x, y, yaw, z_max, z_min)
         Pose = False
         Scan = False
-    # plot results in plots.py
-    plots.plot_map(occupancy_map, resolution, xlim, ylim)
     bag.close()
+    return occupancy_map
+
+
+def main():
+    bagname = '10-06-Bags/corredores.bag'
+    pose = '/pose'
+    map_pose = read_bag(pose, bagname)
+    amcl_pose = '/amcl_pose'
+    map_amcl = read_bag(amcl_pose, bagname)
+
+    # plot probability map with AMCL_pose
+    plt.figure(0)
+    probability_map = utils.restore_p(map_amcl)
+    utils.plot_map(probability_map, resolution, xlim, ylim)
+
+    # plot maximum likelihood map from AMCL_pose
+    plt.figure(1)
+    ml_map = utils.maximum_likelihood(probability_map)
+    utils.plot_map(ml_map, resolution, xlim, ylim)
+
+    # plot probability map with pose
+    plt.figure(2)
+    pose_prob_map = utils.restore_p(map_pose)
+    utils.plot_map(pose_prob_map, resolution, xlim, ylim)
+
+    # plot maximum likelihood map from_pose
+    plt.figure(3)
+    pose_ml_map = utils.maximum_likelihood(pose_prob_map)
+    utils.plot_map(pose_ml_map, resolution, xlim, ylim)
+    plt.show()
+
+    utils.compare_maps(ml_map, pose_ml_map)
+    utils.plot_trajectory(bagname)
+
+
+if __name__ == '__main__':
+    main()

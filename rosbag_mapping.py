@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
-import plots
 
 # Probabilities chosen by the user to define the occupancy values
 P_occupied = 0.6
@@ -104,6 +103,9 @@ class Map():
                 for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
                     self.log_map[y_bresemham, x_bresemham] += self.l_occupied
 
+        return self.log_map
+
+    def return_map(self):
         return self.log_map
 
 
