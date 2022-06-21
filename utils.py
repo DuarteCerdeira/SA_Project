@@ -10,7 +10,7 @@ import math
 
 def maximum_likelihood(_map):
     """
-    Calculate the maximum likelihood map by clipping the occupancy grid map at 0.5 threshold
+    Calculate the maximum likelihood map by clipping the occupancy grid map at 0.5 threshold.
     """
     free = np.where(_map < 0.5)
     _map[free] = 0
@@ -20,10 +20,13 @@ def maximum_likelihood(_map):
 
 
 def restore_p(matrix):
+    """ Restore probability matrix from log-odds."""
     return (1 - np.divide(1, 1+np.exp(matrix)))
 
 
 def compare_maps(map1, map2):
+    """ Function to compare two maps. 
+    Evaluation metric is"""
     free1 = 0
     occupied1 = 0
     free2 = 0
@@ -57,7 +60,7 @@ def compare_maps(map1, map2):
 
 
 def plot_map(occupancy_map, resolution, xlim, ylim):
-    '''Plot a simple figure to represent the occupancy map '''
+    """Plot a simple figure to represent the occupancy map """
 
     plt.imshow(occupancy_map, 'Blues')
 
@@ -78,18 +81,31 @@ def plot_map(occupancy_map, resolution, xlim, ylim):
 
 
 def plot_trajectory(bag_file):
-    ''' Plot the trajectory (x, y) of the robot '''
+    """ Plot the trajectory (x, y) of the robot """
 
     b = bagreader(bag_file)
-    pose = b.message_by_topic('/amcl_pose')
+    pose = b.message_by_topic('/pose')
     posedf = pd.read_csv(pose)
 
     posedf.plot(x='pose.pose.position.x', y='pose.pose.position.y',
-                xlabel='x [m]', ylabel='y [m]')
-    plt.title('Position of the robot',
+                xlabel='x [m]', ylabel='y [m]', label='Trajectory of the robot')
+    # just for initial position of robot
+    plt.plot(-5.47, 3.6, 'ro')
+    # just to circle the change of direction of the robot
+    circle1 = plt.Circle((-16.80, -2.75), 0.8, color='r', alpha=0.3)
+    plt.gca().add_patch(circle1)
+    plt.title('Robot position in 2D',
               fontsize=14, fontweight='bold')
+    plt.grid()
+    plt.legend(loc="upper left")
     plt.show()
 
 
+def plot_covariance(bag_file):
+    b = bagreader(bag_file)
+    cov = b.message_by_topic('/pose')
+    covdf = pd.read_csv(cov)
+
+
 if __name__ == '__main__':
-    main()
+    plot_trajectory('10-06-Bags/corredores.bag')
