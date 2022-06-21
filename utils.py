@@ -25,38 +25,18 @@ def restore_p(matrix):
 
 
 def compare_maps(map1, map2):
-    """ Function to compare two maps. 
-    Evaluation metric is"""
-    free1 = 0
-    occupied1 = 0
-    free2 = 0
-    occupied2 = 0
-    diff0 = 0
-    diff1 = 0
-    difference_map = map1-map2
-    for i in range(len(map1)):
-        for j in range(len(map1[0])):
-            if map1[i][j] == 0:
-                free1 += 1
-            elif map1[i][j] == 1:
-                occupied1 += 1
-            if map2[i][j] == 0:
-                free2 += 1
-            elif map2[i][j] == 1:
-                occupied2 += 1
-            if difference_map[i][j] == 0:
-                diff0 += 1
-            elif difference_map[i][j] == 1 or difference_map[i][j] == -1:
-                diff1 += 1
+    """ Function to compare two maps. Reference map is map1. 
+    Evaluation metric is the sum of the value of the 
+    pixel of the difference map divided by the number of free cells and occupied cells.
+     """
+    difference_map = abs(map1-map2)
 
-    print(free1)
-    print(occupied1)
-    print(free2)
-    print(occupied2)
-    print(free1/free2)
-    print(occupied1/occupied2)
-    print(diff0)
-    print(diff1)
+    total_difference = sum(sum(difference_map))
+    free = (map1 == 0).sum()
+    occupied = (map1 == 1).sum()
+    total = free+occupied
+    error = (total_difference/total) * 100
+    print(error)
 
 
 def plot_map(occupancy_map, resolution, xlim, ylim):

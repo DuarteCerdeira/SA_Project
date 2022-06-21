@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 
 # desired limits and resolution of the map
 P_prior = 0.5
-xlim = [-25, 25]
-ylim = [-25, 25]
+xlim = [-20, 20]
+ylim = [-20, 20]
 resolution = 0.05
 
 
@@ -130,11 +130,11 @@ def read_bag(pose, bagname):
 
 
 def main():
-    bagname = '10-06-Bags/corredores.bag'
-    pose = '/pose'
-    map_pose = read_bag(pose, bagname)
+    bagname = 'corredores2_21-06.bag'
     amcl_pose = '/amcl_pose'
     map_amcl = read_bag(amcl_pose, bagname)
+    bagname2 = 'corredores3_21-06.bag'
+    map2_amcl = read_bag(amcl_pose, bagname2)
 
     # plot probability map with AMCL_pose
     plt.figure(0)
@@ -146,19 +146,14 @@ def main():
     ml_map = utils.maximum_likelihood(probability_map)
     utils.plot_map(ml_map, resolution, xlim, ylim)
 
-    # plot probability map with pose
+    probability_map2 = utils.restore_p(map2_amcl)
+    ml2_map = utils.maximum_likelihood(probability_map2)
+    difference_map = abs(ml_map - ml2_map)
     plt.figure(2)
-    pose_prob_map = utils.restore_p(map_pose)
-    utils.plot_map(pose_prob_map, resolution, xlim, ylim)
-
-    # plot maximum likelihood map from_pose
-    plt.figure(3)
-    pose_ml_map = utils.maximum_likelihood(pose_prob_map)
-    utils.plot_map(pose_ml_map, resolution, xlim, ylim)
+    utils.plot_map(difference_map, resolution, xlim, ylim)
+    utils.compare_maps(ml_map, ml2_map)
     plt.show()
-
-    utils.compare_maps(ml_map, pose_ml_map)
-    utils.plot_trajectory(bagname)
+    # utils.plot_trajectory(bagname)
 
 
 if __name__ == '__main__':

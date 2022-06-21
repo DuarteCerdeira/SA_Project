@@ -177,7 +177,7 @@ class mappingNode(object):
         # ROS node rate to get messages
         # rate = rospy.Rate(0.1)
         while not rospy.is_shutdown():
-            if (not(Scan) or not(Pose)):
+            if (not(self.Scan) or not(self.Pose)):
                 continue
             self.run_mapping()
             self.Pose = False
