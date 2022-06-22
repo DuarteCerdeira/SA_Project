@@ -20,6 +20,8 @@ from nav_msgs.msg import OccupancyGrid, MapMetaData
 import node_mapper
 import numpy as np
 import math
+import time
+from time import perf_counter
 
 # Define map parameters
 width = 4000
@@ -72,8 +74,8 @@ class mappingNode(object):
         self.grid_map.info.resolution = self.resolution
         self.grid_map.info.width = self.width
         self.grid_map.info.height = self.height
-        self.grid_map.info.origin.position.x = -10
-        self.grid_map.info.origin.position.y = -10
+        self.grid_map.info.origin.position.x = -100
+        self.grid_map.info.origin.position.y = -100
         self.grid_map.info.origin.position.z = 0
         self.grid_map.info.origin.orientation.x = 0
         self.grid_map.info.origin.orientation.y = 0
@@ -152,23 +154,23 @@ class mappingNode(object):
                                                        self.z_max,
                                                        self.z_min)
         # restore probability from log-odds
-        self.probability_map = 1 - np.divide(1, 1+np.exp(self.occupancy_map))
+        self.probability_map = 100*(1 - np.divide(1, 1+np.exp(self.occupancy_map)))
 
         # define cell thresholds and apply occupancy probabilities
-        unknown = (np.where(self.probability_map == 0.5))
+        unknown = (np.where(self.probability_map == 50))
         self.probability_map[unknown] = -1
 
-        occupied = (np.where(self.probability_map > self.threshold))
-        self.probability_map[occupied] = 100
+        #occupied = (np.where(self.probability_map > self.threshold))
+        #self.probability_map[occupied] = 100
 
-        free = (np.where(self.probability_map <
-                self.threshold) and np.where(self.probability_map >= 0))
-        self.probability_map[free] = 0
+        #free = (np.where(self.probability_map <
+        #       self.threshold) and np.where(self.probability_map >= 0))
+        #self.probability_map[free] = 0
 
         # convert map to a list of occupancy values and publishes to ROS
         temp = np.reshape(self.probability_map, (1, self.width*self.height))
         self.grid_map.data = temp.tolist()[0]
-        self.grid_map.data = np.int8(np.round_(self.grid_map.data))
+        self.grid_map.data = np.int8(self.grid_map.data)
         rospy.loginfo("Publishing updated map ! ")
         self.map_publisher.publish(self.grid_map)
         self.map_data_publisher.publish(self.grid_map.info)
@@ -180,7 +182,7 @@ class mappingNode(object):
         if difference <= 1:
             return True
         else:
-            return Falses
+            return False
 
     def master(self):
         # ROS node rate to get messages
@@ -190,7 +192,7 @@ class mappingNode(object):
             if (not(self.Scan) or not(self.Pose)):
                 continue
             # check if messages are synchronized
-            if (check_time_stamps()):
+            if (self.check_timestamps()):
                 self.run_mapping()
             self.Pose = False
             self.Scan = False
