@@ -38,6 +38,13 @@ class Map():
         # gmapping starts at a certain coordinate
         self.offset = 20  # map offset to add to coordinates
 
+        # for computational time purposes
+        self.step_time = 0
+        self.sim_time = 0
+        self.step = 0
+        self.start = 0
+        self.end = 0
+
     def map_coordinates(self, x_continuous, y_continuous):
         '''
         Convert (x,y) continuous coordinates to discrete coordinates
@@ -51,9 +58,9 @@ class Map():
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
+        self.start = time.perf_counter()
         self.z_max = z_max
         self.z_min = z_min
-
         # initial (x, y) for Bresenham's algorithm (robot position)
         x1, y1 = self.map_coordinates(x, y)
 
@@ -92,7 +99,20 @@ class Map():
                 for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
                     self.log_map[y_bresemham, x_bresemham] += self.l_occupied
 
+        self.end = time.perf_counter()
+        self.step_time = self.end-self.start
+        self.sim_time += self.step_time
+        self.start = self.step_time
+        self.step += 1
+        # prints the time taken in each algorithm run
+        print('\nStep %d : %d [ms]' % (self.step, self.step_time*1000))
         return self.log_map
+
+    def return_times(self):
+        '''prints the average step time of the algorithm and total simulation time'''
+        print('\nAverage step time: %d [ms]' %
+              ((self.sim_time*1000)/self.step))
+        print('\nTotal Simulation time:%.3f[s]' % self.sim_time)
 
     def return_map(self):
         return self.log_map

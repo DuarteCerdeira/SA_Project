@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
-import time
+import utils
 
 # Probabilities chosen by the user to define the occupancy values
 P_occupied = 0.6
@@ -18,8 +18,7 @@ def log_odds(p):
 
 def restore_p(l):
     '''Restore the probability from log-odds '''
-    exp = 1 + np.exp(l)
-    return 1-(1/exp)
+    return 1-1 / (1+np.exp(l))
 
 
 class Map():
@@ -41,7 +40,6 @@ class Map():
 
         self.alpha = 0.1  # thickness of the obstacle
         self.z_max = None   # max reading distance from the laser scan
-        self.z_min = None  # min reading distance from the laser scan
 
         # initial log-odd probability map matrix
         self.log_map = np.full((self.xsize, self.ysize), log_odds(p))
@@ -49,13 +47,6 @@ class Map():
         # log probabilities to update the map
         self.l_occupied = log_odds(P_occupied)
         self.l_free = log_odds(P_free)
-
-        # for computational time purposes
-        self.step_time = 0
-        self.sim_time = 0
-        self.step = 0
-        self.start = 0
-        self.end = 0
 
     def map_coordinates(self, x_continuous, y_continuous):
         '''
@@ -70,7 +61,6 @@ class Map():
         """
         Compute the occupancy-grid map for a given sensor/robot data
         """
-        self.start = time.perf_counter()
         self.z_max = z_max
         self.z_min = z_min
 
@@ -80,7 +70,7 @@ class Map():
         # run algorithm for all range and angle measurements
         for angle, dist in zip(angles, z):
 
-            # ignore range values that are NaN and only update map when range is inside range limits
+            # ignore range values that are NaN and only update map when range is inside the range limits
             if (not np.isnan(dist)) and dist < self.z_max and dist > self.z_min:
 
                 # angle of the laser + orientation of the robot
@@ -112,24 +102,38 @@ class Map():
                 for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
                     self.log_map[y_bresemham, x_bresemham] += self.l_occupied
 
-        self.end = time.perf_counter()
-        self.step_time = self.end-self.start
-        self.sim_time += self.step_time
-        self.start = self.step_time
-        self.step += 1
-        # prints the time taken in each algorithm run
-        print('\nStep %d : %d [ms]' % (self.step, self.step_time*1000))
         return self.log_map
 
     def return_map(self):
         return self.log_map
 
-    def return_times(self):
-        '''prints the average step time of the algorithm and total simulation time'''
-        print('\nAverage step time: %d [ms]' %
-              ((self.sim_time*1000)/self.step))
-        print('\nTotal Simulation time:%.3f[s]' % self.sim_time)
-
 
 if __name__ == '__main__':
-    main()
+    # Test micro-simulator
+    # Desired limits and resolution of the map
+    xlim = [-20, 20]
+    ylim = [-20, 20]
+    resolution = 0.1
+    z_max = 10
+    z_min = 0.1
+    # Laser data
+    z = [5]
+    angles = [0]
+    # Robot Pose Data
+    x = 0
+    y = 0
+    yaw = 0
+
+    # initialize 2-D occupancy grid map
+    Map = Map(xlim, ylim, resolution, P_prior)
+
+    # final occupancy grid map
+    for i in range(5):
+        x = 0
+        y = i
+        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
+
+    # plot results in plots.py
+    occupancy_map = 1 - np.divide(1, 1+np.exp(occupancy_map))
+    utils.plot_map(occupancy_map, resolution, xlim, ylim)
+    plt.show()

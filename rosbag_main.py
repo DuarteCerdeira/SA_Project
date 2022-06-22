@@ -12,7 +12,7 @@
 #
 ##############################
 
-
+import time
 import numpy as np
 import math
 # to read bags
@@ -92,8 +92,8 @@ class Rosbag_handler():
     def check_timestamps(self):
 
         difference = abs(self.pose_time - self.scan_time)
-        print(difference)
-        if difference <= 2:
+        # print(difference)
+        if difference <= 1:
             return True
         else:
             return False
@@ -102,12 +102,13 @@ class Rosbag_handler():
 def read_bag(pose, bagname):
     # initialize 2-D occupancy grid map
     Map = rosbag_mapping.Map(xlim, ylim, resolution, P_prior)
-    # read bag
     bag = rosbag.Bag(bagname)
     handler = Rosbag_handler()
     i = 0
     Scan = False
     Pose = False
+    initial_time = time.time()
+    # reads rosbag
     for topic, msg, t in bag.read_messages():
         if topic == pose:
             handler.poseCallback(msg)
@@ -119,41 +120,37 @@ def read_bag(pose, bagname):
         # only run algorithm when we get both pose and scan messages
         if (not(Scan) or not(Pose)):
             continue
-        # if (handler.check_timestamps()):
-        z, angles, x, y, yaw, z_max, z_min = handler.run_algorithm(i)
-        occupancy_map = Map.calculate_map(
-            z, angles, x, y, yaw, z_max, z_min)
+        # check if time stamps of messages are synchronized
+        if (handler.check_timestamps()):
+            z, angles, x, y, yaw, z_max, z_min = handler.run_algorithm(i)
+            occupancy_map = Map.calculate_map(
+                z, angles, x, y, yaw, z_max, z_min)
         Pose = False
         Scan = False
     bag.close()
+    sim_time = time.time()-initial_time
+    # computational time of the mapping algorithm
+    Map.return_times()
+    # computational time for reading rosbags
+    print('\nTotal simulation time outside: %.3f[s]' % sim_time)
     return occupancy_map
 
 
 def main():
-    bagname = 'corredores2_21-06.bag'
     amcl_pose = '/amcl_pose'
+    bagname = 'corredores2_21-06.bag'
     map_amcl = read_bag(amcl_pose, bagname)
     bagname2 = 'corredores3_21-06.bag'
     map2_amcl = read_bag(amcl_pose, bagname2)
 
-    # plot probability map with AMCL_pose
-    plt.figure(0)
     probability_map = utils.restore_p(map_amcl)
-    utils.plot_map(probability_map, resolution, xlim, ylim)
-
-    # plot maximum likelihood map from AMCL_pose
-    plt.figure(1)
     ml_map = utils.maximum_likelihood(probability_map)
-    utils.plot_map(ml_map, resolution, xlim, ylim)
 
     probability_map2 = utils.restore_p(map2_amcl)
     ml2_map = utils.maximum_likelihood(probability_map2)
+
     difference_map = abs(ml_map - ml2_map)
-    plt.figure(2)
-    utils.plot_map(difference_map, resolution, xlim, ylim)
     utils.compare_maps(ml_map, ml2_map)
-    plt.show()
-    # utils.plot_trajectory(bagname)
 
 
 if __name__ == '__main__':

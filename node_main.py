@@ -173,17 +173,6 @@ class mappingNode(object):
         self.map_publisher.publish(self.grid_map)
         self.map_data_publisher.publish(self.grid_map.info)
 
-    def master(self):
-        # ROS node rate to get messages
-        # rate = rospy.Rate(0.1)
-        while not rospy.is_shutdown():
-            if (not(self.Scan) or not(self.Pose)):
-                continue
-            self.run_mapping()
-            self.Pose = False
-            self.Scan = False
-            # rate.sleep()
-
     def check_timestamps(self):
 
         difference = abs(self.pose_time - self.scan_time)
@@ -191,7 +180,26 @@ class mappingNode(object):
         if difference <= 1:
             return True
         else:
-            return False
+            return Falses
+
+    def master(self):
+        # ROS node rate to get messages
+        # rate = rospy.Rate(0.1)
+        initial_time = time.time()
+        while not rospy.is_shutdown():
+            if (not(self.Scan) or not(self.Pose)):
+                continue
+            # check if messages are synchronized
+            if (check_time_stamps()):
+                self.run_mapping()
+            self.Pose = False
+            self.Scan = False
+            # rate.sleep()
+        sim_time = time.time()-initial_time
+        # computational time of the mapping algorithm
+        self.mapper.return_times()
+        # computational time for whole algorithm
+        print('\nTotal simulation time outside: %.3f[s]' % sim_time)
 
 
 def main():
