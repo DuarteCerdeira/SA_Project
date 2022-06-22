@@ -72,8 +72,8 @@ class mappingNode(object):
         self.grid_map.info.resolution = self.resolution
         self.grid_map.info.width = self.width
         self.grid_map.info.height = self.height
-        self.grid_map.info.origin.position.x = -5
-        self.grid_map.info.origin.position.y = -5
+        self.grid_map.info.origin.position.x = -10
+        self.grid_map.info.origin.position.y = -10
         self.grid_map.info.origin.position.z = 0
         self.grid_map.info.origin.orientation.x = 0
         self.grid_map.info.origin.orientation.y = 0
@@ -135,7 +135,7 @@ class mappingNode(object):
                                   len(self.ranges))
         self.z_max = scan_msg.range_max
         self.z_min = scan_msg.range_min
-        self.scan_time = scan_msg.header.stamps.secs
+        self.scan_time = scan_msg.header.stamp.secs
         self.Scan = True
 
     def run_mapping(self):
@@ -168,9 +168,9 @@ class mappingNode(object):
         # convert map to a list of occupancy values and publishes to ROS
         temp = np.reshape(self.probability_map, (1, self.width*self.height))
         self.grid_map.data = temp.tolist()[0]
-        # self.grid_map.data = np.int8(np.round_(self.grid_map.data))
+        self.grid_map.data = np.int8(np.round_(self.grid_map.data))
         rospy.loginfo("Publishing updated map ! ")
-        self.map_publisher.publish(self.grid_map, queue_size=1)
+        self.map_publisher.publish(self.grid_map)
         self.map_data_publisher.publish(self.grid_map.info)
 
     def master(self):
