@@ -138,20 +138,30 @@ def read_bag(pose, bagname):
 
 def main():
     amcl_pose = '/amcl_pose'
-    bagname = 'corredores2_21-06.bag'
+    bagname = '../Bags_23-06/corredores23-06_bag1.bag'
     map_amcl = read_bag(amcl_pose, bagname)
-    bagname2 = 'corredores3_21-06.bag'
-    map2_amcl = read_bag(amcl_pose, bagname2)
+    # bagname2 = 'corredores3_21-06.bag'
+    # map2_amcl = read_bag(amcl_pose, bagname2)
 
     probability_map = utils.restore_p(map_amcl)
     ml_map = utils.maximum_likelihood(probability_map)
 
-    probability_map2 = utils.restore_p(map2_amcl)
-    ml2_map = utils.maximum_likelihood(probability_map2)
+    # probability_map2 = utils.restore_p(map2_amcl)
+    # ml2_map = utils.maximum_likelihood(probability_map2)
 
-    difference_map = abs(ml_map - ml2_map)
-    utils.compare_maps(ml_map, ml2_map)
+    bag = rosbag.Bag('../Bags_23-06/corredores23-06_bag1.bag')
+    for topic, msg, t in (bag.read_messages()):
+        if topic == '/map':
+            gmapping_map = msg.data
 
+    gmapping_matrix = np.reshape(gmapping_map, (1440, 1344))
+    unknown = np.where(gmapping_matrix == -1)
+    gmapping_matrix[unknown] = 50
+    # difference_map = abs(ml_map - gmapping_matrix)
+    utils.plot_map(gmapping_matrix, resolution, xlim, ylim)
+    plt.show()
+    # utils.plot_map(difference_map, resolution, xlim, ylim)
+    # utils.compare_maps(ml_map, gmapping_matrix)
 
 if __name__ == '__main__':
     main()
