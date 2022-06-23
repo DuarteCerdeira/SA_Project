@@ -122,10 +122,12 @@ class Map():
         return self.log_map
 
     def return_map(self):
+        '''Return calculated map'''
         return self.log_map
 
     def return_times(self):
-        '''prints the average step time of the algorithm and total simulation time'''
+        '''Print the average step time of the algorithm and total simulation time'''
+
         print('\nAverage step time: %d [ms]' %
               ((self.sim_time*1000)/self.step))
         print('\nTotal Simulation time:%.3f[s]' % self.sim_time)
