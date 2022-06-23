@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 P_prior = 0.5
 xlim = [-20, 20]
 ylim = [-20, 20]
-resolution = 0.05
+resolution = 0.02
 
 
 class Rosbag_handler():
@@ -162,6 +162,36 @@ def main():
     plt.show()
     # utils.plot_map(difference_map, resolution, xlim, ylim)
     # utils.compare_maps(ml_map, gmapping_matrix)
+    ## bagname = 'Bags_23-06/corredores23-06_bag3.bag'
+    ## map1 = read_bag(amcl_pose, bagname)
+    ## bagname2 = 'Bags_23-06/corredores23-06_bag5.bag'
+    ## map2 = read_bag(amcl_pose, bagname2)
+
+    ## probability_map1 = utils.restore_p(map1)
+    ## plt.figure(0)
+    ## utils.plot_map(probability_map1, resolution, xlim, ylim)
+    ## plt.figure(1)
+    ## altered_map1 = utils.threshold(probability_map1)
+    ## utils.plot_map(altered_map1, resolution, xlim, ylim)
+
+    ## plt.figure(2)
+    ## probability_map2 = utils.restore_p(map2)
+    ## utils.plot_map(probability_map2, resolution, xlim, ylim)
+    ## altered_map2 = utils.threshold(probability_map2)
+    ## plt.figure(3)
+    ## utils.plot_map(altered_map2, resolution, xlim, ylim)
+
+    ## difference_map = abs(probability_map1-probability_map2)
+    ## plt.figure(4)
+    ## utils.plot_map(difference_map, resolution, xlim, ylim)
+
+    ## plt.figure(5)
+    ## utils.plot_map(abs(altered_map1-altered_map2), resolution, xlim, ylim)
+
+    ## plt.show()
+    ## utils.compare_maps(altered_map1, altered_map2)
+    ## utils.compare_maps(probability_map1, probability_map2)
+
 
 if __name__ == '__main__':
     main()

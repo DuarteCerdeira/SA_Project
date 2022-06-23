@@ -11,10 +11,8 @@ def maximum_likelihood(_map):
     """
     Calculate the maximum likelihood map by clipping the occupancy grid map at 0.5 threshold.
     """
-    free = np.where(_map < 0.5)
-    _map[free] = 0
-    occupied = (np.where(_map > 0.5))
-    _map[occupied] = 1
+    _map[_map < 0.5] = 0
+    _map[_map > 0.5] = 1
     return _map
 
 
@@ -36,6 +34,15 @@ def compare_maps(map1, map2):
     total = free+occupied
     error = (total_difference/total) * 100
     print(error)
+
+
+def threshold(map1):
+    '''To test different thresholds for calculated map'''
+    threshold = 0.75
+    map1[map1 > 0.85] = 1
+    map1[map1 < 0.1] = 0
+    map1[(map1 >= 0.1) & (map1 <= 0.85)] = 0.5
+    return map1
 
 
 def plot_map(occupancy_map, resolution, xlim, ylim):
@@ -69,10 +76,10 @@ def plot_trajectory(bag_file):
     posedf.plot(x='pose.pose.position.x', y='pose.pose.position.y',
                 xlabel='x [m]', ylabel='y [m]', label='Trajectory of the robot')
     # just for initial position of robot
-    plt.plot(-5.47, 3.6, 'ro')
+    # plt.plot(-5.47, 3.6, 'ro')
     # just to circle the change of direction of the robot
-    circle1 = plt.Circle((-16.80, -2.75), 0.8, color='r', alpha=0.3)
-    plt.gca().add_patch(circle1)
+    # circle1 = plt.Circle((-16.80, -2.75), 0.8, color='r', alpha=0.3)
+    # plt.gca().add_patch(circle1)
     plt.title('Robot position in 2D',
               fontsize=14, fontweight='bold')
     plt.grid()

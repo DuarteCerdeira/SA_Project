@@ -154,18 +154,16 @@ class mappingNode(object):
                                                        self.z_max,
                                                        self.z_min)
         # restore probability from log-odds
-        self.probability_map = 100*(1 - np.divide(1, 1+np.exp(self.occupancy_map)))
+        self.probability_map = 100 * \
+            (1 - np.divide(1, 1+np.exp(self.occupancy_map)))
 
         # define cell thresholds and apply occupancy probabilities
-        unknown = (np.where(self.probability_map == 50))
-        self.probability_map[unknown] = -1
+        self.probability_map[self.probability_map == 50] = -1
 
-        #occupied = (np.where(self.probability_map > self.threshold))
-        #self.probability_map[occupied] = 100
+        #self.probability_map[self.probability_map > self.threshold] = 100
 
-        #free = (np.where(self.probability_map <
-        #       self.threshold) and np.where(self.probability_map >= 0))
-        #self.probability_map[free] = 0
+        # self.probability_map[(self.probability_map <
+        #       self.threshold) & (self.probability_map >= 0)] = 0
 
         # convert map to a list of occupancy values and publishes to ROS
         temp = np.reshape(self.probability_map, (1, self.width*self.height))
