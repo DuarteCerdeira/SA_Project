@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-# import rospy
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
@@ -9,6 +8,8 @@ import time
 P_occupied = 0.6
 P_free = 0.3
 P_prior = 0.5
+width = 1600
+height = 1600
 
 
 def log_odds(p):
@@ -27,9 +28,12 @@ class Map():
     def __init__(self, xlim, ylim, resolution, p):
 
         # limits of the map
+
         self.xlim = xlim
         self.ylim = ylim
         self.resolution = resolution  # grid resolution in [m]
+        self.width = width
+        self.height = height
 
         # cell values from (x, y) 2-D map
         x = np.arange(xlim[0], xlim[1] + resolution, step=resolution)
@@ -39,12 +43,13 @@ class Map():
         self.ysize = len(y)  # number of cells in y direction
         self.map_size = self.xsize*self.ysize  # area of the map
 
-        self.alpha = 0.1  # thickness of the obstacle
+        self.alpha = 0.06  # thickness of the obstacle
         self.z_max = None   # max reading distance from the laser scan
         self.z_min = None  # min reading distance from the laser scan
 
         # initial log-odd probability map matrix
-        self.log_map = np.full((self.xsize, self.ysize), log_odds(p))
+        self.log_map = np.full((self.width, self.height), log_odds(p))
+        # self.log_map = np.full((self.xsize, self.ysize), log_odds(p))
 
         # log probabilities to update the map
         self.l_occupied = log_odds(P_occupied)
@@ -61,8 +66,8 @@ class Map():
         '''
         Convert (x,y) continuous coordinates to discrete coordinates
         '''
-        x = int((x_continuous - self.xlim[0]) / self.resolution)
-        y = int((y_continuous - self.ylim[0]) / self.resolution)
+        x = int((x_continuous + self.xlim[1]) / self.resolution)
+        y = int((y_continuous + self.ylim[1]) / self.resolution)
 
         return (x, y)
 
@@ -106,11 +111,12 @@ class Map():
 
                 # all cells between the robot position to the laser hit cell are free
                 for (x_bresenham, y_bresenham) in bresenham(Map, x1, y1, x2, y2):
-                    self.log_map[y_bresenham, x_bresenham] += self.l_free
+                    self.log_map[x_bresenham, y_bresenham] += self.l_free
 
                 # obstacle cells hit from laser are occupied
                 for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
-                    self.log_map[y_bresemham, x_bresemham] += self.l_occupied
+                    self.log_map[x_bresemham,
+                                 y_bresemham] += self.l_occupied
 
         self.end = time.perf_counter()
         self.step_time = self.end-self.start

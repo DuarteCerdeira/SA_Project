@@ -4,7 +4,7 @@
 # Autonomous Systems 2021/2022 Mapping Project
 #
 # This is the main script that subscribes to laser scans and robot poses
-# from a rosbag and publishes a topic that contains an 2-D occupancy map.
+# from a rosbag and publishes a topic /my_map that contains an 2-D occupancy map.
 #   Group 13:
 #       - 93079, Haohua Dong
 #       - 96158, André Ferreira
@@ -24,8 +24,8 @@ import time
 from time import perf_counter
 
 # Define map parameters
-width = 4000
-height = 4000
+width = 1500
+height = 1500
 resolution = 0.05
 
 # Probability for unknown cells
@@ -74,8 +74,8 @@ class mappingNode(object):
         self.grid_map.info.resolution = self.resolution
         self.grid_map.info.width = self.width
         self.grid_map.info.height = self.height
-        self.grid_map.info.origin.position.x = -100
-        self.grid_map.info.origin.position.y = -100
+        self.grid_map.info.origin.position.x = -15
+        self.grid_map.info.origin.position.y = -15
         self.grid_map.info.origin.position.z = 0
         self.grid_map.info.origin.orientation.x = 0
         self.grid_map.info.origin.orientation.y = 0
@@ -160,11 +160,6 @@ class mappingNode(object):
         # define cell thresholds and apply occupancy probabilities
         self.probability_map[self.probability_map == 50] = -1
 
-        #self.probability_map[self.probability_map > self.threshold] = 100
-
-        # self.probability_map[(self.probability_map <
-        #       self.threshold) & (self.probability_map >= 0)] = 0
-
         # convert map to a list of occupancy values and publishes to ROS
         temp = np.reshape(self.probability_map, (1, self.width*self.height))
         self.grid_map.data = temp.tolist()[0]
@@ -184,7 +179,7 @@ class mappingNode(object):
 
     def master(self):
         # ROS node rate to get messages
-        # rate = rospy.Rate(0.1)
+        rate = rospy.Rate(10)  # 10 Hz
         initial_time = time.time()
         while not rospy.is_shutdown():
             if (not(self.Scan) or not(self.Pose)):
@@ -194,7 +189,7 @@ class mappingNode(object):
                 self.run_mapping()
             self.Pose = False
             self.Scan = False
-            # rate.sleep()
+            rate.sleep()
         sim_time = time.time()-initial_time
         # computational time of the mapping algorithm
         self.mapper.return_times()

@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 
 # desired limits and resolution of the map
 P_prior = 0.5
-xlim = [-20, 20]
-ylim = [-20, 20]
+xlim = [-15, 15]
+ylim = [-15, 15]
 resolution = 0.02
 
 
@@ -80,10 +80,6 @@ class Rosbag_handler():
 
     def run_algorithm(self, i):
         # save initial positions of robot as (0, 0)
-        if i == 1:
-            self.initial_x = self.position_x
-            self.initial_y = self.position_y
-
         yaw = 2 * math.atan2(self.orientation[2],
                              self.orientation[3])
         # returns data for mapping algorithm
@@ -138,59 +134,19 @@ def read_bag(pose, bagname):
 
 def main():
     amcl_pose = '/amcl_pose'
-    bagname = '../Bags_23-06/corredores23-06_bag1.bag'
-    map_amcl = read_bag(amcl_pose, bagname)
-    # bagname2 = 'corredores3_21-06.bag'
-    # map2_amcl = read_bag(amcl_pose, bagname2)
-
-    probability_map = utils.restore_p(map_amcl)
-    ml_map = utils.maximum_likelihood(probability_map)
-
-    # probability_map2 = utils.restore_p(map2_amcl)
-    # ml2_map = utils.maximum_likelihood(probability_map2)
-
-    bag = rosbag.Bag('../Bags_23-06/corredores23-06_bag1.bag')
+    bagname = 'bag1.bag'
+    map1 = read_bag(amcl_pose, bagname)
+    bagname = 'bag2.bag'
+    map2 = read_bag(amcl_pose, bagname)
+    bag = rosbag.Bag('bag3.bag')
     for topic, msg, t in (bag.read_messages()):
         if topic == '/map':
             gmapping_map = msg.data
-
-    gmapping_matrix = np.reshape(gmapping_map, (1440, 1344))
-    unknown = np.where(gmapping_matrix == -1)
-    gmapping_matrix[unknown] = 50
-    # difference_map = abs(ml_map - gmapping_matrix)
-    utils.plot_map(gmapping_matrix, resolution, xlim, ylim)
-    plt.show()
-    # utils.plot_map(difference_map, resolution, xlim, ylim)
-    # utils.compare_maps(ml_map, gmapping_matrix)
-    ## bagname = 'Bags_23-06/corredores23-06_bag3.bag'
-    ## map1 = read_bag(amcl_pose, bagname)
-    ## bagname2 = 'Bags_23-06/corredores23-06_bag5.bag'
-    ## map2 = read_bag(amcl_pose, bagname2)
-
-    ## probability_map1 = utils.restore_p(map1)
-    ## plt.figure(0)
-    ## utils.plot_map(probability_map1, resolution, xlim, ylim)
-    ## plt.figure(1)
-    ## altered_map1 = utils.threshold(probability_map1)
-    ## utils.plot_map(altered_map1, resolution, xlim, ylim)
-
-    ## plt.figure(2)
-    ## probability_map2 = utils.restore_p(map2)
-    ## utils.plot_map(probability_map2, resolution, xlim, ylim)
-    ## altered_map2 = utils.threshold(probability_map2)
-    ## plt.figure(3)
-    ## utils.plot_map(altered_map2, resolution, xlim, ylim)
-
-    ## difference_map = abs(probability_map1-probability_map2)
-    ## plt.figure(4)
-    ## utils.plot_map(difference_map, resolution, xlim, ylim)
-
-    ## plt.figure(5)
-    ## utils.plot_map(abs(altered_map1-altered_map2), resolution, xlim, ylim)
-
-    ## plt.show()
-    ## utils.compare_maps(altered_map1, altered_map2)
-    ## utils.compare_maps(probability_map1, probability_map2)
+            break
+    gmapping_matrix = np.reshape(gmapping_map, (992, 1600))
+    gmapping_matrix = gmapping_matrix.astype(float)
+    gmapping_matrix[gmapping_matrix == 100.0] = 1
+    gmapping_matrix[gmapping_matrix == -1.0] = 0.5
 
 
 if __name__ == '__main__':

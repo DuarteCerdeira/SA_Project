@@ -1,5 +1,15 @@
 #! /usr/bin/env python3
-# import rospy
+##############################
+# Autonomous Systems 2021/2022 Mapping Project
+#
+# This is the script that simulates the 2-D Occupancy Grid Mapping algorithm.
+#   Group 13:
+#       - 93079, Haohua Dong
+#       - 96158, André Ferreira
+#       - 96195, Duarte Cerdeira
+#       - 96230, Inês Pinto
+#
+##############################
 import matplotlib.pyplot as plt
 import numpy as np
 from bresenham import bresenham
@@ -99,8 +109,9 @@ class Map():
                     self.log_map[y_bresenham, x_bresenham] += self.l_free
 
                 # obstacle cells hit from laser are occupied
-                for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
-                    self.log_map[y_bresemham, x_bresemham] += self.l_occupied
+                    for(x_bresemham, y_bresemham) in bresenham(Map, x2, y2, x3, y3):
+                        self.log_map[y_bresemham,
+                                     x_bresemham] += self.l_occupied
 
         return self.log_map
 
@@ -111,29 +122,41 @@ class Map():
 if __name__ == '__main__':
     # Test micro-simulator
     # Desired limits and resolution of the map
-    xlim = [-20, 20]
-    ylim = [-20, 20]
+    xlim = [-10, 10]
+    ylim = [-10, 10]
     resolution = 0.1
     z_max = 10
     z_min = 0.1
     # Laser data
-    z = [5]
-    angles = [0]
+
+    z = [3/np.sin(np.pi*(6/24)), 3/np.sin(np.pi*(7/24)), 3/np.sin(np.pi*(8/24)), 3/np.sin(np.pi*(9/24)), 3/np.sin(np.pi*(10/24)), 3/np.sin(np.pi*(11/24)), 3,
+         3/np.sin(np.pi*(13/24)), 3/np.sin(np.pi*(14/24)), 3/np.sin(np.pi*(15/24)), 3/np.sin(np.pi*(16/24)), 3/np.sin(np.pi*(17/24)), 3/np.sin(np.pi*(18/24))]
+    angles = [np.pi*(6/24), np.pi*(7/24), np.pi*(8/24), np.pi*(9/24), np.pi*(10/24), np.pi*(11/24), np.pi *
+              (12/24), np.pi*(13/24), np.pi*(14/24), np.pi*(15/24), np.pi*(16/24), np.pi*(17/24), np.pi*(18/24)]
     # Robot Pose Data
     x = 0
     y = 0
     yaw = 0
 
-    # initialize 2-D occupancy grid map
+    # initialize 2-D occupancSy grid map
     Map = Map(xlim, ylim, resolution, P_prior)
 
     # final occupancy grid map
-    for i in range(5):
-        x = 0
-        y = i
-        occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
+    occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
+    x = -5
+    y = 5
+    z = [2/np.sin(np.pi*(6/24)), 2/np.sin(np.pi*(5/24)), 2/np.sin(np.pi *
+                                                                  (4/24)), 2/np.sin(np.pi*(3/24)), 5, 5, 5, 5, 5, 5, 5, 5, 5]
+    angles = [np.pi*(-6/24), np.pi*(-5/24), np.pi*(-4/24),
+              np.pi*(-3/24), np.pi*(-2/24), np.pi*(-1/24), 0, np.pi *
+              (1/24), np.pi*(2/24), np.pi*(3/24),
+              np.pi*(4/24), np.pi*(5/24), np.pi*(6/24)]
+
+    occupancy_map = Map.calculate_map(z, angles, x, y, yaw, z_max, z_min)
 
     # plot results in plots.py
     occupancy_map = 1 - np.divide(1, 1+np.exp(occupancy_map))
+    plt.figure(1)
     utils.plot_map(occupancy_map, resolution, xlim, ylim)
+    plt.savefig('simulation_wall.pdf', dpi=600)
     plt.show()

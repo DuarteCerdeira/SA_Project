@@ -37,7 +37,7 @@ class Map():
         self.l_occupied = log_odds(P_occupied)
         self.l_free = log_odds(P_free)
         # gmapping starts at a certain coordinate
-        self.offset = 100  # map offset to add to coordinates
+        self.offset = 15  # map offset to add to coordinates
 
         # for computational time purposes
         self.step_time = 0
